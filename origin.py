@@ -175,7 +175,7 @@ class ChatOpenAIConfigured:
 
 
     def determine_model_name(self, intelligence):
-        if intelligence == 1:
+        if intelligence == 1: 
             return 'gpt-4-1106-preview'
         else:
             return 'gpt-3.5-turbo'
