@@ -129,52 +129,51 @@ async def websocket_endpoint(websocket: WebSocket):
                 if "question" not in data:
                     raise KeyError("The key 'question' is missing from the received data.")
 
-                # inputs = {"messages": [HumanMessage(content=data["question"])]} 
-
-                # for output in appGraph.stream(inputs):
-
-                #     for key, value in output.items():
-                #         if 'messages' in value and value['messages']:
-                #             aimessage = value['messages'][0]
-                            
-                            # aimessage_dict = {
-                            #     'content': aimessage.content,
-                            #     'additional_kwargs': aimessage.additional_kwargs,
-                            # }
-                            
-                #             message = {
-                #                 'node': key,
-                #                 'message': aimessage_dict
-                #             }
-                            
-                #             message_json = json.dumps(message)
-                #             print(message_json)
-                        
-                #             await websocket.send_text(message_json)
-                
-            
                 inputs = {"messages": [HumanMessage(content=data["question"])]} 
 
-                async for output in appGraph.astream_log(inputs, include_types=["llm"]):
-                    # astream_log() yields the requested logs (here LLMs) in JSONPatch format
-                    output_total = []
-                    for op in output.ops:
-                        if op["path"] == "/streamed_output/-":
-                            # this is the output from .stream()
-                            ...
-                        elif op["path"].startswith("/logs/") and op["path"].endswith(
-                            "/streamed_output/-"
-                        ):
-                            # because we chose to only include LLMs, these are LLM tokens
+                for output in appGraph.stream(inputs):
+
+                    for key, value in output.items():
+                        if 'messages' in value and value['messages']:
+                            aimessage = value['messages'][0]
+                            
                             aimessage_dict = {
-                                'content': op["value"].content,
-                                'additional_kwargs': op["value"].additional_kwargs,
+                                'content': aimessage.content,
+                                'additional_kwargs': aimessage.additional_kwargs,
                             }
-                            output_total.append(aimessage_dict)
-                            message_json = json.dumps(aimessage_dict)
-                            await websocket.send_text(message_json)
+                            
+                            message = {
+                                'node': key,
+                                'message': aimessage_dict
+                            }
+                            
+                            message_json = json.dumps(message)
+                            print(message_json)
+                        
+                            await websocket.send_text(message_json)                
+            
+                # inputs = {"messages": [HumanMessage(content=data["question"])]} 
+
+                # async for output in appGraph.astream_log(inputs, include_types=["llm"]):
+                #     # astream_log() yields the requested logs (here LLMs) in JSONPatch format
+                #     output_total = []
+                #     for op in output.ops:
+                #         if op["path"] == "/streamed_output/-":
+                #             # this is the output from .stream()
+                #             ...
+                #         elif op["path"].startswith("/logs/") and op["path"].endswith(
+                #             "/streamed_output/-"
+                #         ):
+                #             # because we chose to only include LLMs, these are LLM tokens
+                #             aimessage_dict = {
+                #                 'content': op["value"].content,
+                #                 'additional_kwargs': op["value"].additional_kwargs,
+                #             }
+                #             output_total.append(aimessage_dict)
+                #             message_json = json.dumps(aimessage_dict)
+                #             await websocket.send_text(message_json)
                     
-                    print(output_total)                            
+                #     print(output_total)                            
             except Exception as e:
                 logging.error(f"An error occurred: {e}")
                 await websocket.send_text(json.dumps({"error": str(e)}))
